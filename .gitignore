@@ -1,0 +1,47 @@
+# LKH Vision Solver - Git Ignore
+# © 2026 iM@Des
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environment
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Generated data files (user should not commit their data)
+LKH_data/Data/*.tsp
+LKH_data/config/*.par
+LKH_data/result/*.tour
+
+# Excel data (user's personal data)
+Excel/Imported/*.xlsx
+Excel/Imported/*.xls
+Excel/Imported/*.csv
+Excel/results/*.xlsx
+Excel/results/*.xls
+
+# Generated maps
+Map_view/*.html
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Keep folder structure (add empty .gitkeep files)
+!LKH_data/Data/.gitkeep
+!LKH_data/config/.gitkeep
+!LKH_data/result/.gitkeep
+!Excel/Imported/.gitkeep
+!Excel/results/.gitkeep
+!Map_view/.gitkeep
