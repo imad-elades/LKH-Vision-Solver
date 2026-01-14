@@ -23,7 +23,16 @@
 
 ## 📸 Screenshots
 
-*Coming soon*
+### Main Interface
+![Main Interface](screenshots/screenshot1.png)
+
+### Optimization in Progress
+![Optimization](screenshots/screenshot3.png)
+
+### Results
+![Results](screenshots/screenshot4.png)
+
+
 
 ---
 
