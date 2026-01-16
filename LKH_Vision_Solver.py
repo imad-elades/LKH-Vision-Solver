@@ -61,7 +61,7 @@ import pandas as pd
 # CONSTANTS & STYLING
 # =============================================================================
 APP_TITLE = "🗺️ LKH Vision Solver"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 COPYRIGHT = "© 2026 iM@Des - Tous droits réservés"
 DEVELOPER = "iM@Des"
 

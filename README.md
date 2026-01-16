@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](#license)
-[![Version](https://img.shields.io/badge/Version-1.0.0-green.svg)](#)
+[![Version](https://img.shields.io/badge/Version-1.1.0-green.svg)](#)
 
 **Complete graphical solution for Traveling Salesman Problem (TSP) optimization**
 
@@ -12,12 +12,18 @@
 
 ## ✨ Features
 
+### Core Features
 - 📁 **Import** Excel/CSV files with geographic coordinates
 - ⚙️ **Configure** LKH parameters with interactive tooltips
 - 🚀 **Presets**: Fast (~10s), Balanced (~1min), Quality (~5min)
 - 📊 **Real-time tracking** of optimization progress
 - 📈 **Export** results to Excel with visiting order
 - 🗺️ **Interactive map** visualization using Folium
+
+### New in v1.1.0 🆕
+- 🧮 **Conversion Mode Selector**: Choose between Haversine Matrix (pre-calculated distances) or LKH Coordinates (let LKH compute distances)
+- ⚙️ **Advanced Parameters**: 9 new configurable LKH parameters in a collapsible section
+- 📍 **EDGE_WEIGHT_TYPE Control**: Select how distances are calculated (EXPLICIT, EUC_2D, GEOM, GEO, etc.)
 
 ---
 
@@ -31,8 +37,6 @@
 
 ### Results
 ![Results](screenshots/screenshot4.png)
-
-
 
 ---
 
@@ -60,19 +64,34 @@ py -3 LKH_Vision_Solver.py
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure & File Locations
 
 ```
 LKH-Vision-Solver/
-├── LKH_Vision_Solver.py    # Main application (entry point)
-├── requirements.txt        # Python dependencies
-├── LKH_exe/               # LKH solver executable
-├── python_scripts/        # Core modules
-├── LKH_data/              # TSP/PAR/TOUR files
-├── Excel/                 # Input/Output Excel files
-├── icon/                  # Application icon
-├── Map_view/              # Generated HTML maps
-└── help/                  # Documentation
+│
+├── 📥 INPUT
+│   └── Excel/
+│       └── Imported/           ← Your imported Excel/CSV files
+│
+├── 🔄 INTERMEDIATE (LKH Files)
+│   └── LKH_data/
+│       ├── Data/               ← .tsp files (problem definition)
+│       ├── config/             ← .par files (LKH parameters)
+│       └── result/             ← .tour files (LKH solution)
+│
+├── 📤 OUTPUT
+│   ├── Excel/results/          ← Excel with visiting order
+│   └── Map_view/               ← Interactive HTML maps
+│
+├── 🔧 APPLICATION
+│   ├── LKH_Vision_Solver.py    ← Main application (entry point)
+│   ├── requirements.txt
+│   ├── LKH_exe/               ← LKH solver executable
+│   ├── python_scripts/        ← Core modules
+│   └── icon/                  ← Application icon
+│
+└── 📖 DOCUMENTATION
+    └── help/                  ← README.md, Walkthrough.md
 ```
 
 ---
@@ -87,9 +106,24 @@ Your Excel/CSV file should contain:
 | 2 | 34.0209 | -6.8416 |
 | ... | ... | ... |
 
+> **Note**: Use decimal degrees (WGS84) for GPS coordinates.
+
+---
+
+## 🧮 Conversion Modes (v1.1.0)
+
+LKH Vision Solver offers two conversion modes:
+
+| Mode | Description | Best For |
+|------|-------------|----------|
+| **🧮 Haversine Matrix** | Pre-calculates all distances using Haversine formula. Creates EXPLICIT distance matrix. | GPS coordinates, maximum precision |
+| **📍 LKH Coordinates** | Passes coordinates to LKH, lets it compute distances based on EDGE_WEIGHT_TYPE | Planar coordinates, custom distance types |
+
 ---
 
 ## ⚙️ LKH Parameters
+
+### Standard Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -98,6 +132,27 @@ Your Excel/CSV file should contain:
 | MAX_TRIALS | 1000 | Maximum trials per run |
 | POPULATION_SIZE | 3 | Genetic algorithm population |
 | RECOMBINATION | CLARIST | Recombination method |
+| SCALE | 100 | Distance scaling factor |
+
+### Advanced Parameters (v1.1.0) 🆕
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| EDGE_WEIGHT_TYPE | Distance calculation type (EXPLICIT, EUC_2D, GEOM, etc.) | (auto) |
+| CANDIDATE_SET_TYPE | Candidate construction method | ALPHA |
+| MAX_CANDIDATES | Max candidates per node | 5 |
+| INITIAL_TOUR_ALGORITHM | Initial tour algorithm | (auto) |
+| KICKS | Number of kicks (perturbations) | 1 |
+| KICK_TYPE | Type of kick | 4 |
+| BACKTRACKING | Enable backtracking | (auto) |
+| SEED | Random seed | 1 |
+| TIME_LIMIT | Time limit in seconds (0=unlimited) | 0 |
+
+### Presets
+
+- 🚀 **Fast**: ~10 sec - Quick tests
+- ⚖️ **Balanced**: ~1 min - Ideal compromise
+- 💎 **Quality**: ~5 min - Best solution
 
 ---
 

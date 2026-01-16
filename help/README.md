@@ -19,6 +19,12 @@ LKH Vision Solver is an intuitive graphical interface for the LKH solver (Lin-Ke
 - ✅ Export results to Excel
 - ✅ Interactive map visualization of the tour
 
+### New in v1.1.0 🆕
+
+- ✅ **Conversion Mode Selector**: Haversine Matrix vs LKH Coordinates
+- ✅ **Advanced LKH Parameters**: 9 new configurable parameters
+- ✅ **Collapsible UI**: Advanced parameters in expandable section
+
 ---
 
 ## 🚀 Installation
@@ -72,13 +78,25 @@ py -3 LKH_Vision_Solver.py
 ### Steps
 
 1. **Import**: Select your Excel/CSV file with coordinates
-2. **Configure**: Choose a preset or adjust parameters
-3. **Optimize**: Launch optimization and track progress
-4. **Results**: Inspect the tour, Excel file, or map
+2. **Choose Mode**: Haversine Matrix or LKH Coordinates (v1.1.0)
+3. **Configure**: Choose a preset or adjust parameters
+4. **Optimize**: Launch optimization and track progress
+5. **Results**: Inspect the tour, Excel file, or map
+
+---
+
+## 🧮 Conversion Modes (v1.1.0)
+
+| Mode | Method | Best For |
+|------|--------|----------|
+| **Haversine Matrix** | Pre-calculated distances | GPS coordinates |
+| **LKH Coordinates** | LKH computes distances | Planar/custom |
 
 ---
 
 ## ⚙️ LKH Parameters
+
+### Standard Parameters
 
 | Parameter | Description | Impact |
 |-----------|-------------|--------|
@@ -88,6 +106,20 @@ py -3 LKH_Vision_Solver.py
 | POPULATION_SIZE | Population size | ⬆️ Diversity |
 | RECOMBINATION | Genetic method | CLARIST recommended |
 | SCALE | Precision factor | 100 = standard |
+
+### Advanced Parameters (v1.1.0) 🆕
+
+| Parameter | Description |
+|-----------|-------------|
+| EDGE_WEIGHT_TYPE | Distance calculation type |
+| CANDIDATE_SET_TYPE | Candidate construction method |
+| MAX_CANDIDATES | Max candidates per node |
+| INITIAL_TOUR_ALGORITHM | Initial tour algorithm |
+| KICKS | Number of perturbations |
+| KICK_TYPE | Type of kick |
+| BACKTRACKING | Enable backtracking search |
+| SEED | Random seed |
+| TIME_LIMIT | Time limit (seconds) |
 
 ### Presets
 
@@ -128,4 +160,4 @@ This software is the exclusive property of iM@Des. Any reproduction, distributio
 ## 📧 Contact
 
 **Developer**: iM@Des  
-**Version**: 1.0.0
+**Version**: 1.1.0
