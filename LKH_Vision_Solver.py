@@ -145,6 +145,78 @@ LKH_PARAMS = {
     }
 }
 
+# Advanced LKH Parameters (collapsible section)
+LKH_ADVANCED_PARAMS = {
+    'EDGE_WEIGHT_TYPE': {
+        'default': '',
+        'options': ['', 'EXPLICIT', 'EUC_2D', 'EUC_3D', 'GEO', 'GEOM', 'ATT', 'CEIL_2D', 'CEIL_3D', 'FLOOR_2D', 'FLOOR_3D', 'EXACT_2D', 'EXACT_3D'],
+        'description': "Type de calcul des poids/distances",
+        'impact': "GEOM pour GPS, EUC_2D pour coordonnées planes",
+        'example': "Laisser vide pour utiliser celui du fichier TSP"
+    },
+    'CANDIDATE_SET_TYPE': {
+        'default': '',
+        'options': ['', 'ALPHA', 'DELAUNAY', 'NEAREST-NEIGHBOR', 'QUADRANT', 'POPMUSIC'],
+        'description': "Méthode de construction des candidats",
+        'impact': "ALPHA = défaut optimal, POPMUSIC = grands problèmes",
+        'example': "POPMUSIC recommandé pour >10000 points"
+    },
+    'MAX_CANDIDATES': {
+        'default': 5,
+        'min': 1,
+        'max': 50,
+        'description': "Nombre maximum de candidats par nœud",
+        'impact': "⬆️ Plus = meilleure qualité, plus lent",
+        'example': "5 est un bon défaut"
+    },
+    'INITIAL_TOUR_ALGORITHM': {
+        'default': '',
+        'options': ['', 'BORUVKA', 'GREEDY', 'NEAREST-NEIGHBOR', 'QUICK-BORUVKA', 'SIERPINSKI', 'WALK'],
+        'description': "Algorithme pour le tour initial",
+        'impact': "GREEDY ou NEAREST-NEIGHBOR = rapide",
+        'example': "Laisser vide pour défaut LKH"
+    },
+    'KICKS': {
+        'default': 1,
+        'min': 0,
+        'max': 100,
+        'description': "Nombre de kicks (perturbations)",
+        'impact': "⬆️ Plus = plus d'exploration",
+        'example': "1 suffisant généralement"
+    },
+    'KICK_TYPE': {
+        'default': 4,
+        'min': 0,
+        'max': 10,
+        'description': "Type de kick",
+        'impact': "4 = défaut équilibré",
+        'example': "Laisser à 4 sauf expertise"
+    },
+    'BACKTRACKING': {
+        'default': '',
+        'options': ['', 'YES', 'NO'],
+        'description': "Active le retour arrière dans la recherche",
+        'impact': "YES = plus exhaustif mais plus lent",
+        'example': "Laisser vide pour défaut LKH"
+    },
+    'SEED': {
+        'default': 1,
+        'min': 0,
+        'max': 999999,
+        'description': "Graine du générateur aléatoire",
+        'impact': "Changer pour obtenir différentes solutions",
+        'example': "1 = résultats reproductibles"
+    },
+    'TIME_LIMIT': {
+        'default': 0,
+        'min': 0,
+        'max': 86400,
+        'description': "Limite de temps en secondes (0 = illimité)",
+        'impact': "Arrêt automatique après ce délai",
+        'example': "3600 = 1 heure maximum"
+    }
+}
+
 # Presets
 PRESETS = {
     'rapid': {
@@ -203,14 +275,23 @@ class LKHVisionSolver:
         self.lat_col = tk.StringVar(value='Y-coordinate')
         self.lon_col = tk.StringVar(value='X-coordinate')
         self.columns = []
+        self.conversion_mode = tk.StringVar(value='haversine')  # 'haversine' or 'coordinates'
         
         # Parameter variables
         self.params = {}
         for param, info in LKH_PARAMS.items():
-            if param == 'RECOMBINATION':
-                self.params[param] = tk.StringVar(value=info['default'])
+            if 'options' in info:
+                self.params[param] = tk.StringVar(value=str(info['default']))
             else:
                 self.params[param] = tk.IntVar(value=info['default'])
+        
+        # Advanced parameter variables
+        self.advanced_params = {}
+        for param, info in LKH_ADVANCED_PARAMS.items():
+            if 'options' in info:
+                self.advanced_params[param] = tk.StringVar(value=str(info['default']))
+            else:
+                self.advanced_params[param] = tk.IntVar(value=info['default'])
         
         # State variables
         self.is_running = False
@@ -395,6 +476,32 @@ class LKHVisionSolver:
                                     background=COLORS['bg_light'])
         self.data_info.pack(fill='x', pady=(5, 0))
         
+        # =========================================================================
+        # CONVERSION MODE SELECTOR
+        # =========================================================================
+        mode_separator = ttk.Separator(card, orient='horizontal')
+        mode_separator.pack(fill='x', pady=(15, 10))
+        
+        mode_frame = ttk.Frame(card, style='Card.TFrame')
+        mode_frame.pack(fill='x', pady=5)
+        
+        ttk.Label(mode_frame, text="Mode de conversion:", 
+                  background=COLORS['bg_light'], font=('Segoe UI', 10, 'bold')).pack(side='left', padx=(0, 15))
+        
+        ttk.Radiobutton(mode_frame, text="🧮 Matrice Haversine (précision max)", 
+                        variable=self.conversion_mode, value='haversine',
+                        command=self._on_conversion_mode_change).pack(side='left', padx=(0, 20))
+        
+        ttk.Radiobutton(mode_frame, text="📍 Coordonnées LKH", 
+                        variable=self.conversion_mode, value='coordinates',
+                        command=self._on_conversion_mode_change).pack(side='left')
+        
+        # Mode description
+        self.mode_desc = ttk.Label(card, 
+                                   text="💡 Matrice Haversine: distances pré-calculées avec formule Haversine (recommandé pour GPS)",
+                                   style='Muted.TLabel', background=COLORS['bg_light'])
+        self.mode_desc.pack(fill='x', pady=(5, 0))
+        
     def _create_params_section(self, parent):
         """Create LKH parameters section."""
         card = self._create_card(parent, "PARAMÈTRES LKH", "⚙️")
@@ -439,10 +546,10 @@ class LKHVisionSolver:
             # Tooltip binding
             self._create_tooltip(label, info)
             
-            # Control widget
+            # Control widget - EDITABLE comboboxes (no readonly)
             if 'options' in info:
                 ctrl = ttk.Combobox(frame, textvariable=self.params[param],
-                                   values=info['options'], width=12, state='readonly')
+                                   values=[str(o) for o in info['options']], width=12)
             else:
                 ctrl = ttk.Spinbox(frame, textvariable=self.params[param],
                                   from_=info['min'], to=info['max'], width=10)
@@ -465,6 +572,92 @@ class LKHVisionSolver:
         scale_spin.pack(side='left', padx=10)
         ttk.Label(scale_frame, text="(100 = précision au 1/100 km)", 
                   style='Muted.TLabel', background=COLORS['bg_light']).pack(side='left')
+        
+        # =========================================================================
+        # ADVANCED PARAMETERS SECTION (Collapsible)
+        # =========================================================================
+        advanced_header = ttk.Frame(card, style='Card.TFrame')
+        advanced_header.pack(fill='x', pady=(15, 5))
+        
+        self.advanced_expanded = tk.BooleanVar(value=False)
+        self.advanced_toggle_btn = ttk.Button(advanced_header, 
+                                              text="▶ Paramètres avancés...",
+                                              command=self._toggle_advanced_params)
+        self.advanced_toggle_btn.pack(side='left')
+        
+        ttk.Label(advanced_header, text="(cliquer pour développer)", 
+                  style='Muted.TLabel', background=COLORS['bg_light']).pack(side='left', padx=10)
+        
+        # Advanced parameters container (initially hidden)
+        self.advanced_frame = ttk.Frame(card, style='Card.TFrame')
+        # Don't pack yet - will be done when expanded
+        
+        # Create advanced parameter controls
+        adv_container = ttk.Frame(self.advanced_frame, style='Card.TFrame')
+        adv_container.pack(fill='x', pady=5)
+        
+        row = 0
+        col = 0
+        for param, info in LKH_ADVANCED_PARAMS.items():
+            frame = ttk.Frame(adv_container, style='Card.TFrame')
+            frame.grid(row=row, column=col, padx=10, pady=8, sticky='w')
+            
+            # Label with tooltip indicator
+            label_text = f"{param} ⓘ"
+            label = ttk.Label(frame, text=label_text, background=COLORS['bg_light'],
+                             cursor='question_arrow')
+            label.pack(anchor='w')
+            
+            # Tooltip binding
+            self._create_tooltip(label, info)
+            
+            # Control widget - EDITABLE (can type custom values)
+            if 'options' in info:
+                ctrl = ttk.Combobox(frame, textvariable=self.advanced_params[param],
+                                   values=info['options'], width=16)
+            else:
+                ctrl = ttk.Spinbox(frame, textvariable=self.advanced_params[param],
+                                  from_=info['min'], to=info['max'], width=10)
+            ctrl.pack(anchor='w', pady=(2, 0))
+            
+            col += 1
+            if col >= 3:
+                col = 0
+                row += 1
+        
+        # Info label for advanced section
+        adv_info = ttk.Label(self.advanced_frame, 
+                             text="💡 Laissez vide pour utiliser les valeurs par défaut de LKH. Vous pouvez taper des valeurs personnalisées.",
+                             style='Muted.TLabel', background=COLORS['bg_light'])
+        adv_info.pack(fill='x', pady=(5, 0))
+        
+    def _toggle_advanced_params(self):
+        """Toggle visibility of advanced parameters section."""
+        if self.advanced_expanded.get():
+            self.advanced_frame.pack_forget()
+            self.advanced_toggle_btn.config(text="▶ Paramètres avancés...")
+            self.advanced_expanded.set(False)
+        else:
+            self.advanced_frame.pack(fill='x', pady=(5, 0))
+            self.advanced_toggle_btn.config(text="▼ Paramètres avancés")
+            self.advanced_expanded.set(True)
+    
+    def _on_conversion_mode_change(self):
+        """Handle conversion mode change (haversine vs coordinates)."""
+        mode = self.conversion_mode.get()
+        if mode == 'haversine':
+            self.mode_desc.config(
+                text="💡 Matrice Haversine: distances pré-calculées avec formule Haversine (recommandé pour GPS)"
+            )
+            # EDGE_WEIGHT_TYPE is fixed to EXPLICIT in haversine mode
+            self.advanced_params['EDGE_WEIGHT_TYPE'].set('')
+        else:
+            self.mode_desc.config(
+                text="💡 Coordonnées LKH: LKH calcule les distances selon EDGE_WEIGHT_TYPE choisi (GEOM=GPS décimal)"
+            )
+            # Set default EDGE_WEIGHT_TYPE for coordinates mode
+            if not self.advanced_params['EDGE_WEIGHT_TYPE'].get():
+                self.advanced_params['EDGE_WEIGHT_TYPE'].set('GEOM')
         
     def _create_tooltip(self, widget, info):
         """Create tooltip for parameter explanation."""
@@ -734,10 +927,17 @@ class LKHVisionSolver:
             self.par_path = os.path.join(PATHS['config'], f"{base_name}.par")
             self.tour_path = os.path.join(PATHS['result'], f"{base_name}.tour")
             
-            converter.compute_distance_matrix()
-            converter.generate_tsp_file(self.tsp_path, base_name)
-            
-            self._log_console(f"✅ TSP créé: LKH_data/Data/{base_name}.tsp")
+            # Generate TSP file based on conversion mode
+            if self.conversion_mode.get() == 'haversine':
+                # Mode Haversine: compute distance matrix (EXPLICIT)
+                converter.compute_distance_matrix()
+                converter.generate_tsp_file(self.tsp_path, base_name)
+                self._log_console(f"✅ TSP créé (Haversine/EXPLICIT): LKH_data/Data/{base_name}.tsp")
+            else:
+                # Mode Coordinates: write coordinates with EDGE_WEIGHT_TYPE
+                edge_type = self.advanced_params['EDGE_WEIGHT_TYPE'].get() or 'GEOM'
+                converter.generate_tsp_file_coords(self.tsp_path, edge_type, base_name)
+                self._log_console(f"✅ TSP créé ({edge_type}): LKH_data/Data/{base_name}.tsp")
             
             if not self.is_running:
                 return
@@ -811,9 +1011,62 @@ class LKHVisionSolver:
             f.write(f"PATCHING_A = {self.params['PATCHING_A'].get()}\n")
             f.write(f"RUNS = {self.params['RUNS'].get()}\n")
             f.write(f"MAX_TRIALS = {self.params['MAX_TRIALS'].get()}\n")
-            if self.params['POPULATION_SIZE'].get() > 1:
-                f.write(f"POPULATION_SIZE = {self.params['POPULATION_SIZE'].get()}\n")
+            
+            # Population/genetic algorithm parameters
+            pop_size = self.params['POPULATION_SIZE'].get()
+            if isinstance(pop_size, str):
+                pop_size = int(pop_size) if pop_size.isdigit() else 1
+            if pop_size > 1:
+                f.write(f"POPULATION_SIZE = {pop_size}\n")
                 f.write(f"RECOMBINATION = {self.params['RECOMBINATION'].get()}\n")
+            
+            # =========================================================================
+            # ADVANCED PARAMETERS (only if specified)
+            # =========================================================================
+            # String parameters (write only if not empty)
+            # Note: EDGE_WEIGHT_TYPE is a TSP file parameter, NOT a PAR file parameter
+            for param in ['CANDIDATE_SET_TYPE', 'INITIAL_TOUR_ALGORITHM', 'BACKTRACKING']:
+                value = self.advanced_params[param].get()
+                if value and value.strip():
+                    f.write(f"{param} = {value.strip()}\n")
+            
+            # Numeric parameters (write only if different from default or user modified)
+            # MAX_CANDIDATES
+            max_cand = self.advanced_params['MAX_CANDIDATES'].get()
+            if isinstance(max_cand, str):
+                max_cand = int(max_cand) if max_cand.isdigit() else 5
+            if max_cand != 5:  # Only write if different from default
+                f.write(f"MAX_CANDIDATES = {max_cand}\n")
+            
+            # KICKS
+            kicks = self.advanced_params['KICKS'].get()
+            if isinstance(kicks, str):
+                kicks = int(kicks) if kicks.isdigit() else 1
+            if kicks != 1:
+                f.write(f"KICKS = {kicks}\n")
+            
+            # KICK_TYPE  
+            kick_type = self.advanced_params['KICK_TYPE'].get()
+            if isinstance(kick_type, str):
+                kick_type = int(kick_type) if kick_type.isdigit() else 4
+            if kick_type != 4:
+                f.write(f"KICK_TYPE = {kick_type}\n")
+            
+            # SEED
+            seed = self.advanced_params['SEED'].get()
+            if isinstance(seed, str):
+                seed = int(seed) if seed.isdigit() else 1
+            if seed != 1:
+                f.write(f"SEED = {seed}\n")
+            
+            # TIME_LIMIT
+            time_limit = self.advanced_params['TIME_LIMIT'].get()
+            if isinstance(time_limit, str):
+                time_limit = int(time_limit) if time_limit.isdigit() else 0
+            if time_limit > 0:
+                f.write(f"TIME_LIMIT = {time_limit}\n")
+            
+            # Tour output file (always at end)
             f.write(f"TOUR_FILE = {self.tour_path}\n")
             
     def _run_lkh(self):
